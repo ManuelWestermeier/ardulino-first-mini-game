@@ -205,14 +205,27 @@ struct ScoreSystem {
     player.pos = { 2, MAX_SCREEN_Y };
   }
 
+  void Blink() {
+    digitalWrite(ledPin, HIGH);
+    delay(100);
+    digitalWrite(ledPin, LOW);
+    delay(100);
+    digitalWrite(ledPin, HIGH);
+    delay(100);
+    digitalWrite(ledPin, LOW);
+  }
+
   void Win() {
+    Blink();
     //draw ui
     lcd.clear();
+    digitalWrite(ledPin, HIGH);
     lcd.setCursor(3, 1);
     score++;
     lcd.print("Score: ");
     lcd.print(score);
     delay(1000);
+    digitalWrite(ledPin, LOW);
     //make game faster
     if (renderCount > MIN_RENDER_COUNT)
       renderCount--;
@@ -221,6 +234,7 @@ struct ScoreSystem {
   }
 
   void Loose() {
+    Blink();
     //draw
     lcd.clear();
     lcd.setCursor(3, 1);
@@ -264,6 +278,7 @@ void Update() {
 }
 
 void Draw() {
+  lcd.noCursor();
   lcd.clear();
 
   //use *.pos.canDraw() to check if the object is in screen to prevent errors
