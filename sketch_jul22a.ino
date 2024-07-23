@@ -16,26 +16,18 @@ int ledPin = 9;     // Pin-Ausgang für die LED
 int jumpForce = 2;
 int renderCount = DEFAULT_RENDER_COUNT;
 
+int score = 0;
+
 byte manCharacter[8] = {
-  B01100,
-  B01110,
-  B00100,
-  B11111,
-  B00100,
-  B01110,
-  B11111,
+  B01110, B01110, B00100, B11111, B01110, B01110,
+  B01010,
   B01010
 };
 
 byte pointCharacter[8] = {
-  B00100,
-  B01010,
-  B10001,
-  B10001,
-  B10001,
-  B01010,
-  B00100,
-  B00000
+  B01011, B00111, B00100, B01110, B11111, B11111,
+  B11111,
+  B01110
 };
 
 byte enemyCharacter[8] = {
@@ -49,17 +41,40 @@ byte enemyCharacter[8] = {
   B00100
 };
 
+byte background[8] = {
+  B11111,
+  B10001,
+  B10001,
+  B10001,
+  B10001,
+  B10001,
+  B10001,
+  B11111
+};
+
+byte pocal[8] = {
+  B11111, B11111, B11111, B01110, B00100, B00100,
+  B01110,
+  B11111
+};
+
 void setup() {
   lcd.init();
   lcd.backlight();
   lcd.createChar(0, manCharacter);
   lcd.createChar(1, pointCharacter);
   lcd.createChar(2, enemyCharacter);
+  lcd.createChar(3, background);
+  lcd.createChar(4, pocal);
 
   pinMode(swPin, INPUT_PULLUP);
   pinMode(buttonPin, INPUT_PULLUP);
   pinMode(ledPin, OUTPUT);
   Draw();
+}
+
+void Clear() {
+  lcd.clear();
 }
 
 void loop() {
@@ -195,8 +210,6 @@ Ball ball;
 Enemy enemy;
 
 struct ScoreSystem {
-  int score = 0;
-
   void Init() {
     ball.pos = { random(10, MAX_SCREEN_X), random(0, 4) };
     ball.renderPos = { ball.pos.x, ball.pos.y };
@@ -217,36 +230,85 @@ struct ScoreSystem {
 
   void Win() {
     Blink();
-    //draw ui
+
+    // LED blink pattern for win animation
+    for (int i = 0; i < 3; i++) {
+      digitalWrite(ledPin, HIGH);
+      delay(100);
+      digitalWrite(ledPin, LOW);
+      delay(100);
+    }
+
+    // Scroll "You Scored!" message
     lcd.clear();
-    digitalWrite(ledPin, HIGH);
-    lcd.setCursor(3, 1);
-    score++;
+    String message = "!!!You Scored!!!";
+    for (int position = 0; position < 16; position++) {
+      lcd.setCursor(position, 1);
+      lcd.print(message);
+      delay(200);
+      lcd.clear();
+    }
+
+    // Display score
+    lcd.setCursor(6, 2);
     lcd.print("Score: ");
     lcd.print(score);
     delay(1000);
     digitalWrite(ledPin, LOW);
-    //make game faster
-    if (renderCount > MIN_RENDER_COUNT)
+
+    // Make game faster
+    if (renderCount > MIN_RENDER_COUNT) {
       renderCount--;
-    lcd.clear();
+    }
+
+    Clear();
     Init();
   }
 
   void Loose() {
     Blink();
-    //draw
+
+    // LED blink pattern for loose animation
+    for (int i = 0; i < 3; i++) {
+      digitalWrite(ledPin, HIGH);
+      delay(100);
+      digitalWrite(ledPin, LOW);
+      delay(100);
+    }
+
+    // Scroll "!!!You Loose!!!" message
     lcd.clear();
-    lcd.setCursor(3, 1);
-    lcd.print("Your Loose");
-    lcd.setCursor(3, 2);
+    String message = "!!!You Loose!!!";
+    for (int position = 0; position < 16; position++) {
+      lcd.setCursor(position, 1);
+      lcd.print(message);
+      delay(200);
+      lcd.clear();
+    }
+
+    // Scroll "Score: X" message
+    String scoreMessage = "Score: " + String(score);
+    for (int position = 0; position < 16; position++) {
+      lcd.setCursor(position, 2);
+      lcd.print(scoreMessage);
+      delay(200);
+      lcd.clear();
+    }
+
+    // Final display of the loose message and score without scrolling
+    lcd.setCursor(2, 1);
+    lcd.print("!!!You Loose!!!");
+    lcd.setCursor(6, 2);
     lcd.print("Score: ");
     lcd.print(score);
     delay(2000);
-    lcd.clear();
-    //reset
+    digitalWrite(ledPin, LOW);
+
+    // Reset score and render count
     score = 0;
     renderCount = DEFAULT_RENDER_COUNT;
+
+    Clear();
     Init();
   }
 };
@@ -279,7 +341,9 @@ void Update() {
 
 void Draw() {
   lcd.noCursor();
-  lcd.clear();
+  Clear();
+  lcd.home();
+  lcd.print(score);
 
   //use *.pos.canDraw() to check if the object is in screen to prevent errors
   //draw the figures
