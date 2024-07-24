@@ -1,4 +1,5 @@
 #include <LiquidCrystal_I2C.h>
+#include <EEPROM.h>
 
 LiquidCrystal_I2C lcd(0x27, 20, 4);
 
@@ -7,6 +8,18 @@ LiquidCrystal_I2C lcd(0x27, 20, 4);
 #define MIN_RENDER_COUNT 5
 #define DEFAULT_RENDER_COUNT 20
 #define CHARACTER_COUNT 2
+
+void writeIntIntoEEPROM(int address, int number) {
+  EEPROM.write(address, number >> 8);
+  EEPROM.write(address + 1, number & 0xFF);
+}
+
+int readIntFromEEPROM(int address) {
+  byte byte1 = EEPROM.read(address);
+  byte byte2 = EEPROM.read(address + 1);
+
+  return (byte1 << 8) + byte2;
+}
 
 int xPin = A0;      // Pin-Eingang für die horizontale Richtung vom Joystick
 int yPin = A1;      // Pin-Eingang für die vertikale Richtung vom Joystick
@@ -21,6 +34,7 @@ int score = 0;
 
 int selectedPlayer = 0;
 
+int highScore = readIntFromEEPROM(0) < 0 ? 0 : readIntFromEEPROM(0);
 
 byte manCharacters[CHARACTER_COUNT][8] = {
   { B01110, B01110, B00100, B11111, B01110, B01110, B01010, B01010 },
@@ -72,6 +86,9 @@ struct MainMenu {
   void Run() {
     while (digitalRead(swPin) != LOW) {
       lcd.clear();
+      lcd.setCursor(6, 0);
+      lcd.print("best: ");
+      lcd.print(highScore);
       lcd.setCursor(3, 1);
       lcd.print("Select Player!");
       int h = analogRead(xPin);
@@ -171,6 +188,13 @@ struct Player {
     return pos.y == MAX_SCREEN_Y;
   }
 
+  void checkHighScore() {
+    if (score > highScore) {
+      highScore = score;
+      writeIntIntoEEPROM(0, highScore);
+    }
+  }
+
   void Update(int h, int v, bool jump) {
 
     // joystick is pressed or verticalInput is up
@@ -196,6 +220,8 @@ struct Player {
 
     //check colliding
     isColliding = isCollidningWithGround();
+
+    checkHighScore();
   }
 };
 
