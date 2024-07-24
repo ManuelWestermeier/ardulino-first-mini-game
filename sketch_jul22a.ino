@@ -411,9 +411,9 @@ void Draw() {
   lcd.home();
   lcd.print(score);
 
-  if (player.pos.canDraw()) {
-    lcd.setCursor(player.pos.x, player.pos.y);
-    lcd.write(byte(selectedPlayer + 10));
+  if (enemy.renderPos.canDraw()) {  // Check if enemy can be drawn
+    lcd.setCursor(enemy.renderPos.x, enemy.renderPos.y);
+    lcd.write(byte(0));  // Write the enemy character
   }
 
   if (ball.renderPos.canDraw()) {
@@ -421,8 +421,8 @@ void Draw() {
     lcd.write(byte(1));
   }
 
-  if (enemy.renderPos.canDraw()) {  // Check if enemy can be drawn
-    lcd.setCursor(enemy.renderPos.x, enemy.renderPos.y);
-    lcd.write(byte(0));  // Write the enemy character
+  if (player.pos.canDraw()) {
+    lcd.setCursor(player.pos.x, player.pos.y);
+    lcd.write(byte(selectedPlayer + 10));
   }
 }
