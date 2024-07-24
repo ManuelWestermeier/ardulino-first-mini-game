@@ -6,6 +6,7 @@ LiquidCrystal_I2C lcd(0x27, 20, 4);
 #define MAX_SCREEN_Y 3
 #define MIN_RENDER_COUNT 5
 #define DEFAULT_RENDER_COUNT 20
+#define CHARACTER_COUNT 2
 
 int xPin = A0;      // Pin-Eingang für die horizontale Richtung vom Joystick
 int yPin = A1;      // Pin-Eingang für die vertikale Richtung vom Joystick
@@ -18,10 +19,19 @@ int renderCount = DEFAULT_RENDER_COUNT;
 
 int score = 0;
 
-byte manCharacter[8] = {
-  B01110, B01110, B00100, B11111, B01110, B01110,
-  B01010,
-  B01010
+int selectedPlayer = 0;
+
+
+byte manCharacters[CHARACTER_COUNT][8] = {
+  { B01110, B01110, B00100, B11111, B01110, B01110, B01010, B01010 },
+  { B01110,
+    B01110,
+    B00100,
+    B01110,
+    B11111,
+    B11111,
+    B11111,
+    B01010 }
 };
 
 byte pointCharacter[8] = {
@@ -58,18 +68,60 @@ byte pocal[8] = {
   B11111
 };
 
+struct MainMenu {
+  void Run() {
+    while (digitalRead(swPin) != LOW) {
+      lcd.clear();
+      lcd.setCursor(3, 1);
+      lcd.print("Select Player!");
+      int h = analogRead(xPin);
+
+      if (h > 900) {
+        selectedPlayer++;
+      } else if (h < 100) {
+        selectedPlayer--;
+      }
+
+      if (selectedPlayer > CHARACTER_COUNT - 1) selectedPlayer = CHARACTER_COUNT - 1;
+      if (selectedPlayer < 0) selectedPlayer = 0;
+
+      int offset = (int)(10 - CHARACTER_COUNT / 2);
+
+      for (int i = 0; i < CHARACTER_COUNT; i++) {
+        lcd.setCursor(offset + i, 2);
+        lcd.write(byte(10 + i));  // Use write instead of print to display the custom character
+      }
+
+      lcd.setCursor(offset + selectedPlayer, 3);
+      lcd.print("^");
+
+      delay(100);
+    }
+    lcd.clear();
+  }
+};
+
+MainMenu menu;
+
 void setup() {
   lcd.init();
   lcd.backlight();
-  lcd.createChar(0, manCharacter);
+
+  lcd.createChar(0, enemyCharacter);
   lcd.createChar(1, pointCharacter);
   lcd.createChar(2, enemyCharacter);
   lcd.createChar(3, background);
   lcd.createChar(4, pocal);
 
+  //set the chars
+  lcd.createChar(10, manCharacters[0]);
+  lcd.createChar(11, manCharacters[1]);
+
   pinMode(swPin, INPUT_PULLUP);
   pinMode(buttonPin, INPUT_PULLUP);
   pinMode(ledPin, OUTPUT);
+
+  menu.Run();
   Draw();
 }
 
@@ -283,15 +335,15 @@ struct ScoreSystem {
       delay(100);
     }
 
-    // Scroll "!!!You Loose!!!" message
+    // Scroll "!!!You Lose!!!" message
     lcd.clear();
-    String message = "!!!You Loose!!!";
-    message[0] = 2;
-    message[1] = 2;
-    message[2] = 2;
-    message[12] = 2;
-    message[14] = 2;
-    message[15] = 2;
+    String message = "!!!You Lose!!!";
+    message[0] = 0;
+    message[1] = 0;
+    message[2] = 0;
+    message[11] = 0;
+    message[12] = 0;
+    message[13] = 0;
     for (int position = 0; position < 16; position++) {
       lcd.setCursor(position, 1);
       lcd.print(message);
@@ -310,7 +362,7 @@ struct ScoreSystem {
 
     // Final display of the loose message and score without scrolling
     lcd.setCursor(2, 1);
-    lcd.print("!!!You Loose!!!");
+    lcd.print(message);
     lcd.setCursor(6, 2);
     lcd.print("Score: ");
     lcd.print(score);
@@ -321,6 +373,7 @@ struct ScoreSystem {
     score = 0;
     renderCount = DEFAULT_RENDER_COUNT;
 
+    menu.Run();
     Clear();
     Init();
   }
@@ -358,12 +411,9 @@ void Draw() {
   lcd.home();
   lcd.print(score);
 
-  //use *.pos.canDraw() to check if the object is in screen to prevent errors
-  //draw the figures
-
   if (player.pos.canDraw()) {
     lcd.setCursor(player.pos.x, player.pos.y);
-    lcd.write(byte(0));
+    lcd.write(byte(selectedPlayer + 10));
   }
 
   if (ball.renderPos.canDraw()) {
@@ -371,8 +421,8 @@ void Draw() {
     lcd.write(byte(1));
   }
 
-  if (enemy.renderPos.canDraw()) {
+  if (enemy.renderPos.canDraw()) {  // Check if enemy can be drawn
     lcd.setCursor(enemy.renderPos.x, enemy.renderPos.y);
-    lcd.write(byte(2));
+    lcd.write(byte(0));  // Write the enemy character
   }
 }
