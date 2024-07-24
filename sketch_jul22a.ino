@@ -242,6 +242,12 @@ struct ScoreSystem {
     // Scroll "You Scored!" message
     lcd.clear();
     String message = "!!!You Scored!!!";
+    message[0] = 4;
+    message[1] = 4;
+    message[2] = 4;
+    message[13] = 4;
+    message[14] = 4;
+    message[15] = 4;
     for (int position = 0; position < 16; position++) {
       lcd.setCursor(position, 1);
       lcd.print(message);
@@ -250,6 +256,7 @@ struct ScoreSystem {
     }
 
     // Display score
+    score++;
     lcd.setCursor(6, 2);
     lcd.print("Score: ");
     lcd.print(score);
@@ -279,6 +286,12 @@ struct ScoreSystem {
     // Scroll "!!!You Loose!!!" message
     lcd.clear();
     String message = "!!!You Loose!!!";
+    message[0] = 2;
+    message[1] = 2;
+    message[2] = 2;
+    message[12] = 2;
+    message[14] = 2;
+    message[15] = 2;
     for (int position = 0; position < 16; position++) {
       lcd.setCursor(position, 1);
       lcd.print(message);
